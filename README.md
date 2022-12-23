@@ -1,4 +1,4 @@
-# arcdps Squad Notes plugin
+# Arcdps Squad Notes Plugin
 
 A Plugin for arcdps, that tracks squad members, so that you can add notes for any member and save it for later so when ever you joined a squad with member that have notes it's already there for you.
 
@@ -14,7 +14,7 @@ To allow tracking of players outside your current instance, install the [unoffic
 
 ## Usage
 
-Don't block anyone unless it's mandatory!! type some notes on them and give him a chance!
+Don't block anyone unless it's mandatory!! type some notes and give him/her a chance!
 
 This plugin will load all the members from everybody in your group, next to his/her name type your notes and then press *ENTER* to save it.
 
