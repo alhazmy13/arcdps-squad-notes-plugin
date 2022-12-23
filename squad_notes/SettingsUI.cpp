@@ -9,7 +9,7 @@
 #include "extension/KeyBindHandler.h"
 #include "extension/KeyInput.h"
 
-#include "imgui/imgui.h"
+#include <imgui/imgui.h>
 #include "extension/Widgets.h"
 
 void SettingsUI::Draw() {
