@@ -1,0 +1,12 @@
+[submodule "modules/extension"]
+	path = modules/extension
+	url = https://github.com/knoxfighter/arcdps-extension.git
+	branch = project
+[submodule "modules/unofficial_extras"]
+	path = modules/unofficial_extras
+	url = https://github.com/Krappa322/arcdps_unofficial_extras_releases.git
+	branch = project
+[submodule "modules/imgui"]
+	path = modules/imgui
+	url = https://github.com/knoxfighter/imgui.git
+	branch = arcdps-extension
