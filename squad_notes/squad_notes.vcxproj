@@ -145,6 +145,7 @@
   <ItemGroup>
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="global.cpp" />
+    <ClCompile Include="Log.cpp" />
     <ClCompile Include="SquadNotesUI.cpp" />
     <ClCompile Include="SquadNotesUIKeyBindComponent.cpp" />
     <ClCompile Include="SquadNotesUITable.cpp" />
@@ -165,6 +166,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="global.h" />
+    <ClInclude Include="Log.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="SquadNotesUI.h" />
     <ClInclude Include="SquadNotesUIKeyBindComponent.h" />

@@ -26,6 +26,7 @@ void SettingsUI::Draw() {
 	                          ImGuiEx::KeyCodeInputFlags_FixedModifier, arcdpsModifier)) {
 		KeyBindHandler::instance().UpdateKeys(oldKey, settings.settings.windowKey);
 	}
+	ImGui::Checkbox("Keep unTracked/Leave players on Squad note Panel"s.c_str(), &settings.settings.keepUntrackedPlayer);
 
 	ImGui::Checkbox("Do NOT close window on ESC"s.c_str(), &settings.settings.disableEscClose);
 
@@ -49,7 +50,7 @@ void SettingsUI::Draw() {
 			const auto& tryEmplace = cachedPlayers.try_emplace(player.username, player.username, player.addedBy,
 			                                                   player.self, player.characterName, player.id);
 
-			// load kp.me data if less than 10 people tracked
+			// load player note
 			loadNoteSizeChecked(tryEmplace.first->second);
 		}
 	}

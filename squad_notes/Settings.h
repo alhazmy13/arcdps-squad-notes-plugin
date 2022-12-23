@@ -74,12 +74,13 @@ public:
 		bool highlightHoveredRows = true;
 		SquadNotesUITable::TableSettings tableSettings;
 		bool showBasedOnMap = false;
+		bool keepUntrackedPlayer = true;
 		std::map<std::string, std::string> notes;
 
 		NLOHMANN_DEFINE_TYPE_INTRUSIVE_NON_THROWING(SettingsObject, version, windowKey,
 			showSquadNotes, notes,disableEscClose,
 		                                            alignment, headerAlignment, showControls,
-		                                            showHeader, position,
+		                                            showHeader, position, keepUntrackedPlayer,
 		                                            cornerPosition, cornerVector, anchorPanelCornerPosition,
 		                                            selfPanelCornerPosition, fromWindowID,
 		                                            showCommander, hideExtrasMessage, sizingPolicy,

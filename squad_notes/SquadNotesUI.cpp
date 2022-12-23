@@ -5,7 +5,7 @@
 #include "SquadNotesUIPositioningComponent.h"
 #include "Player.h"
 #include "Settings.h"
-
+#include "Log.h"
 #include "extension/ExtensionTranslations.h"
 #include "extension/IconLoader.h"
 #include "extension/imgui_stdlib.h"
@@ -131,6 +131,7 @@ void SquadNotesUI::DrawContent() {
 
 		if (addPlayer) {
 			std::string username(userAddBuf);
+			Log::instance().Logger("Mod init");
 
 			// only run when username is not empty
 			if (!username.empty()) {
@@ -172,10 +173,24 @@ void SquadNotesUI::DrawContent() {
 
 		ImGui::SameLine();
 		if (ImGui::Button("Clear"s.c_str())) {
+			auto pred = [](const std::string& player) {
+				const auto& cachedIt = cachedPlayers.find(player);
+				if (cachedIt != cachedPlayers.end()) {
+					return cachedIt->second.unTracked;
+				}
+
+				return false;
+			};
+
+			const auto& trackedSub = std::ranges::remove_if(trackedPlayers, pred);
+			trackedPlayers.erase(trackedSub.begin(), trackedSub.end());
+
+			const auto& instanceSub = std::ranges::remove_if(instancePlayers, pred);
+			instancePlayers.erase(instanceSub.begin(), instanceSub.end());
 			trackedPlayers = instancePlayers;
 		}
 		if (ImGui::IsItemHovered()) {
-			ImGui::SetTooltip("Remove all manually added users"s.c_str());
+			ImGui::SetTooltip("Remove all manually/unTracked users"s.c_str());
 		}
 
 		

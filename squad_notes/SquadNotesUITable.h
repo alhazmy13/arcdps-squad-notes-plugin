@@ -63,6 +63,6 @@ private:
 	bool drawRow(TableColumnIdx pFirstColumnIndex, const Player& pPlayer, bool pTotal = false, bool pTotalText = false);
 
 	template<bool AlignmentActive = false>
-	void drawTextColumn(bool& pOpen, const std::string& pText, const std::string& pUsername, const std::atomic<LoadingStatus>& pStatus, bool pTreeNode, bool pIsCommander);
+	void drawTextColumn(bool& pOpen, const std::string& pText, const std::string& pUsername, const bool& unTracked, bool pTreeNode, bool pIsCommander);
 
 };

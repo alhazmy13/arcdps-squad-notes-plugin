@@ -2,7 +2,7 @@
 #include "SquadNotesUI.h"
 #include "Settings.h"
 #include "SettingsUI.h"
-
+#include "Log.h"
 #include "extension/arcdps_structs.h"
 #include "extension/KeyBindHandler.h"
 #include "extension/KeyInput.h"
@@ -176,7 +176,7 @@ uintptr_t mod_combat(cbtevent* ev, ag* src, ag* dst, const char* skillname, uint
 							const auto& tryEmplace = cachedPlayers.try_emplace(
 								username, username, AddedBy::Arcdps, dst->self, src->name, src->id);
 
-							// check if emplacing successful, if yes, load the kp.me page
+							// check if emplacing successful
 							if (tryEmplace.second) {
 								// save player object to work on
 								Player& player = tryEmplace.first->second;
@@ -195,7 +195,7 @@ uintptr_t mod_combat(cbtevent* ev, ag* src, ag* dst, const char* skillname, uint
 								player.addedBy = AddedBy::Arcdps;
 							}
 							player.id = src->id;
-
+							player.unTracked = false;
 							// load user data if not yet loaded (check inside function)
 							loadNoteSizeChecked(player);
 
@@ -213,10 +213,12 @@ uintptr_t mod_combat(cbtevent* ev, ag* src, ag* dst, const char* skillname, uint
 					/* remove */
 					else {
 						// do NOT remove yourself
+						Log::instance().Logger("MAIN|Extras|Remove Called = " + username);
 						if (username != selfAccountName) {
 							std::scoped_lock<std::mutex, std::mutex> guard(trackedPlayersMutex, instancePlayersMutex);
 
 							// remove specific user
+							Log::instance().Logger("MAIN|Extras|Start Remove Self = " + username);
 							removePlayer(username, AddedBy::Arcdps);
 						}
 					}
@@ -482,7 +484,7 @@ void squad_update_callback(const UserInfo* updatedUsers, size_t updatedUsersCoun
 				const auto& tryEmplace = cachedPlayers.try_emplace(username, username, AddedBy::Extras,
 																   username == selfAccountName);
 
-				// check if emplacing successful, if yes, load the kp.me page
+				// check if emplacing successful
 				if (tryEmplace.second) {
 					// save player object to work on
 					Player& player = tryEmplace.first->second;
@@ -494,7 +496,7 @@ void squad_update_callback(const UserInfo* updatedUsers, size_t updatedUsersCoun
 					if (updatedUsers[i].Role == UserRole::SquadLeader) {
 						player.commander = true;
 					}
-
+					player.unTracked = false;
 					player.subgroup = updatedUsers[i].Subgroup;
 				}
 			} else {
@@ -515,7 +517,7 @@ void squad_update_callback(const UserInfo* updatedUsers, size_t updatedUsersCoun
 				if (updatedUsers[i].Role == UserRole::SquadLeader) {
 					player.commander = true;
 				}
-
+				player.unTracked = false;
 				player.subgroup = updatedUsers[i].Subgroup;
 			}
 
@@ -524,8 +526,10 @@ void squad_update_callback(const UserInfo* updatedUsers, size_t updatedUsersCoun
 		} else // User removed
 		{
 			if (username == selfAccountName) {
+				Log::instance().Logger("MAIN|Extras|Start Remove Self = " + username);
 				auto pred = [](const std::string& player) {
 					if (player == selfAccountName) return false;
+					if (Settings::instance().settings.keepUntrackedPlayer) return false;
 					const auto& cachedIt = cachedPlayers.find(player);
 					if (cachedIt != cachedPlayers.end()) {
 						return cachedIt->second.addedBy != AddedBy::Manually;
@@ -541,11 +545,16 @@ void squad_update_callback(const UserInfo* updatedUsers, size_t updatedUsersCoun
 				const auto& instanceSub = std::ranges::remove_if(instancePlayers, pred);
 				instancePlayers.erase(instanceSub.begin(), instanceSub.end());
 
-				const auto& actualSelfPlayer = cachedPlayers.find(username);
-				if (actualSelfPlayer != cachedPlayers.end()) {
-					actualSelfPlayer->second.commander = false;
+		
+				for (auto& cachedPlayer : cachedPlayers) {
+					Player& player = cachedPlayer.second;
+					if (player.username == selfAccountName) {
+						player.commander = false;
+					}
+					player.unTracked = true;
 				}
 			} else {
+				Log::instance().Logger("MAIN|Extras|Start Remove User = " + username);
 				removePlayer(username, AddedBy::Extras);
 			}
 		}
@@ -584,7 +593,7 @@ void addSelfUser(std::string name) {
 		// no element found, create it
 		const auto& tryEmplace = cachedPlayers.try_emplace(name, name, AddedBy::Extras, true);
 
-		// check if emplacing successful, if yes, load the kp.me page
+		// check if emplacing successful
 		if (tryEmplace.second) {
 			// save player object to work on
 			Player& player = tryEmplace.first->second;

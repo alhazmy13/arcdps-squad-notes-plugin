@@ -28,18 +28,18 @@ bool SquadNotesUITable::drawRow(TableColumnIdx pFirstColumnIndex, const Player& 
 			const bool first = pFirstColumnIndex == GetColumnIndex();
 
 			if (column.UserId == JOIN_TIME_ID) {
-					SYSTEMTIME joinedTime = pPlayer.joinedTime;
-					drawTextColumn<true>(open, std::format("{:02d}:{:02d}:{:02d}", joinedTime.wHour, joinedTime.wMinute, joinedTime.wSecond), pPlayer.username, pPlayer.status,
-					               first , false);
-					
+				SYSTEMTIME joinedTime = pPlayer.joinedTime;
+				drawTextColumn<true>(open, std::format("{:02d}:{:02d}:{:02d}", joinedTime.wHour, joinedTime.wMinute, joinedTime.wSecond), pPlayer.username, pPlayer.unTracked,
+					first, false);
+
 				continue;
 			}
 			if (column.UserId == ACCOUNT_NAME_ID) {
-					drawTextColumn<true>(open, pPlayer.username, pPlayer.username, pPlayer.status, first, pPlayer.commander && accountNameEnabled);
+				drawTextColumn<true>(open, pPlayer.username, pPlayer.username, pPlayer.unTracked, first, pPlayer.commander && accountNameEnabled);
 				continue;
 			}
 			if (column.UserId == CHARACTER_NAME_ID) {
-					drawTextColumn<true>(open, pPlayer.characterName, pPlayer.username, pPlayer.status, first, pPlayer.commander && !accountNameEnabled);
+				drawTextColumn<true>(open, pPlayer.unTracked ? "true": "false", pPlayer.username, pPlayer.unTracked, first, pPlayer.commander && !accountNameEnabled);
 				continue;
 			}
 
@@ -55,7 +55,7 @@ bool SquadNotesUITable::drawRow(TableColumnIdx pFirstColumnIndex, const Player& 
 
 			if (column.UserId == SUBGROUP_ID) {
 				// subgroups are zero based and ui is one based
-				drawTextColumn<true>(open, std::to_string(pPlayer.subgroup + 1), pPlayer.username, pPlayer.status, first , false);
+				drawTextColumn<true>(open, std::to_string(pPlayer.subgroup + 1), pPlayer.username, pPlayer.unTracked, first, false);
 				continue;
 			}
 
@@ -69,18 +69,24 @@ namespace {
 	std::optional<size_t> COMMANDER_TAG_TEXTURE;
 }
 template<bool AlignmentActive>
-void SquadNotesUITable::drawTextColumn(bool& pOpen, const std::string& pText, const std::string& pUsername, const std::atomic<LoadingStatus>& pStatus, bool pTreeNode, bool
-                                      pIsCommander) {
+void SquadNotesUITable::drawTextColumn(bool& pOpen, const std::string& pText, const std::string& pUsername, const bool& unTracked, bool pTreeNode, bool
+	pIsCommander) {
 	if (pIsCommander && Settings::instance().settings.showCommander) {
 		float size = ImGui::GetFontSize();
 		ImGui::Image(GET_TEXTURE_CUSTOM(COMMANDER_TAG_TEXTURE, ID_Commander_White), ImVec2(size, size));
 		ImGui::SameLine();
+	}
+	if (unTracked) {
+		ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(172, 89, 89, 255));
 	}
 	if constexpr (AlignmentActive) {
 		AlignedTextColumn(pText);
 	}
 	else {
 		ImGui::TextUnformatted(pText.c_str());
+	}
+	if (unTracked) {
+		ImGui::PopStyleColor();
 	}
 }
 
@@ -92,17 +98,15 @@ void SquadNotesUITable::DrawRows(TableColumnIdx pFirstColumnIndex) {
 	for (const std::string& trackedPlayer : trackedPlayers) {
 		const Player& player = cachedPlayers.at(trackedPlayer);
 
-		// hide player without data, when setting is active
-		if (!(player.status == LoadingStatus::NoDataAvailable)) {
-			bool open = drawRow(pFirstColumnIndex, player, true);
-			if (open) {
-				drawRow<true>(pFirstColumnIndex, player, false);
+		bool open = drawRow(pFirstColumnIndex, player, true);
+		if (open) {
+			drawRow<true>(pFirstColumnIndex, player, false);
 
-				ImGui::TreePop();
-			}
-
-			EndMaxHeightRow();
+			ImGui::TreePop();
 		}
+
+		EndMaxHeightRow();
+
 	}
 }
 
@@ -112,45 +116,45 @@ void SquadNotesUITable::Sort(const ImGuiTableColumnSortSpecs* mColumnSortSpecs) 
 	if (mColumnSortSpecs->ColumnUserID == JOIN_TIME_ID) {
 		std::ranges::sort(trackedPlayers, [descend](const std::string& playerAName, const std::string& playerBName) -> bool {
 			const SYSTEMTIME& joinedTimeA = cachedPlayers.at(playerAName).joinedTime;
-			const SYSTEMTIME& joinedTimeB = cachedPlayers.at(playerBName).joinedTime;
+		const SYSTEMTIME& joinedTimeB = cachedPlayers.at(playerBName).joinedTime;
 
-			auto tiedTimeA = std::tie(joinedTimeA.wYear, joinedTimeA.wMonth, joinedTimeA.wDay, joinedTimeA.wHour, joinedTimeA.wMinute, joinedTimeA.wSecond);
-			auto tiedTimeB = std::tie(joinedTimeB.wYear, joinedTimeB.wMonth, joinedTimeB.wDay, joinedTimeB.wHour, joinedTimeB.wMinute, joinedTimeB.wSecond);
+		auto tiedTimeA = std::tie(joinedTimeA.wYear, joinedTimeA.wMonth, joinedTimeA.wDay, joinedTimeA.wHour, joinedTimeA.wMinute, joinedTimeA.wSecond);
+		auto tiedTimeB = std::tie(joinedTimeB.wYear, joinedTimeB.wMonth, joinedTimeB.wDay, joinedTimeB.wHour, joinedTimeB.wMinute, joinedTimeB.wSecond);
 
-			if (descend) {
-				return tiedTimeA < tiedTimeB;
-			}
-			return tiedTimeA > tiedTimeB;
-		});
+		if (descend) {
+			return tiedTimeA < tiedTimeB;
+		}
+		return tiedTimeA > tiedTimeB;
+			});
 		return;
 	}
 	if (mColumnSortSpecs->ColumnUserID == ACCOUNT_NAME_ID) {
 		// sort by account name. Account name is the value we used in trackedPlayers, so nothing more to do
 		std::ranges::sort(trackedPlayers, [descend](std::string playerAName, std::string playerBName) {
 			std::ranges::transform(playerAName, playerAName.begin(), [](unsigned char c) { return std::tolower(c); });
-			std::ranges::transform(playerBName, playerBName.begin(), [](unsigned char c) { return std::tolower(c); });
+		std::ranges::transform(playerBName, playerBName.begin(), [](unsigned char c) { return std::tolower(c); });
 
-			if (descend) {
-				return playerAName < playerBName;
-			}
-			return playerAName > playerBName;
-		});
+		if (descend) {
+			return playerAName < playerBName;
+		}
+		return playerAName > playerBName;
+			});
 		return;
 	}
 	if (mColumnSortSpecs->ColumnUserID == CHARACTER_NAME_ID) {
 		// sort by character name
 		std::ranges::sort(trackedPlayers, [descend](const std::string& playerAName, const std::string& playerBName) {
 			std::string playerAChar = cachedPlayers.at(playerAName).characterName;
-			std::string playerBChar = cachedPlayers.at(playerBName).characterName;
+		std::string playerBChar = cachedPlayers.at(playerBName).characterName;
 
-			std::ranges::transform(playerAChar, playerAChar.begin(), [](unsigned char c) { return std::tolower(c); });
-			std::ranges::transform(playerBChar, playerBChar.begin(), [](unsigned char c) { return std::tolower(c); });
+		std::ranges::transform(playerAChar, playerAChar.begin(), [](unsigned char c) { return std::tolower(c); });
+		std::ranges::transform(playerBChar, playerBChar.begin(), [](unsigned char c) { return std::tolower(c); });
 
-			if (descend) {
-				return playerAChar < playerBChar;
-			}
-			return playerAChar > playerBChar;
-		});
+		if (descend) {
+			return playerAChar < playerBChar;
+		}
+		return playerAChar > playerBChar;
+			});
 		return;
 	}
 
@@ -158,16 +162,16 @@ void SquadNotesUITable::Sort(const ImGuiTableColumnSortSpecs* mColumnSortSpecs) 
 		// sort by subgroup
 		std::ranges::sort(trackedPlayers, [descend](const std::string& playerAName, const std::string& playerBName) {
 			uint8_t playerAGroup = cachedPlayers.at(playerAName).subgroup;
-			uint8_t playerBGroup = cachedPlayers.at(playerBName).subgroup;
+		uint8_t playerBGroup = cachedPlayers.at(playerBName).subgroup;
 
-			if (descend) {
-				return playerAGroup > playerBGroup;
-			}
-			return playerAGroup < playerBGroup;
-		});
+		if (descend) {
+			return playerAGroup > playerBGroup;
+		}
+		return playerAGroup < playerBGroup;
+			});
 		return;
 	}
-	
+
 }
 
 Alignment& SquadNotesUITable::getAlignment() {

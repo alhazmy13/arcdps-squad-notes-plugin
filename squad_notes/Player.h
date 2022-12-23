@@ -5,18 +5,6 @@
 #include <Windows.h>
 #include <nlohmann/json.hpp>
 
-enum class LoadingStatus {
-	// loading was not yet tried
-	NotLoaded,
-	// User has no kp.me account or account is private
-	NoDataAvailable,
-	// Successful, all data available to use
-	Loaded,
-	// Data is currently bering loaded by charactername
-	LoadingByChar,
-	// Data was loaded by a linked account name
-	LoadedByLinked,
-};
 
 enum class AddedBy {
 	Manually,
@@ -42,10 +30,10 @@ public:
 	std::string username;
 	std::string note;
 	std::string characterName;
-	std::atomic<LoadingStatus> status{LoadingStatus::NotLoaded};
 	std::string errorMessage;
 	AddedBy addedBy;
 	bool commander = false;
+	bool unTracked = false;
 	SYSTEMTIME joinedTime;
 	bool self = false;
 	uint8_t subgroup = 0;
