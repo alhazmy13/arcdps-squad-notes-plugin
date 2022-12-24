@@ -169,7 +169,7 @@ uintptr_t mod_combat(cbtevent* ev, ag* src, ag* dst, const char* skillname, uint
 						if (selfAccountName.empty() && dst->self) {
 							selfAccountName = username;
 						}
-
+						if (selfAccountName == username) return 0;
 						auto playerIt = cachedPlayers.find(username);
 						if (playerIt == cachedPlayers.end()) {
 							// no element found, create it
@@ -213,12 +213,12 @@ uintptr_t mod_combat(cbtevent* ev, ag* src, ag* dst, const char* skillname, uint
 					/* remove */
 					else {
 						// do NOT remove yourself
-						Log::instance().Logger("MAIN|Extras|Remove Called = " + username);
+						Log::instance().Logger("mod_combat","MAIN|Arcdps|Remove Called = " + username);
 						if (username != selfAccountName) {
 							std::scoped_lock<std::mutex, std::mutex> guard(trackedPlayersMutex, instancePlayersMutex);
 
 							// remove specific user
-							Log::instance().Logger("MAIN|Extras|Start Remove Self = " + username);
+							Log::instance().Logger("mod_combat","MAIN|Arcdps|Start Remove Self = " + username);
 							removePlayer(username, AddedBy::Arcdps);
 						}
 					}
@@ -526,7 +526,7 @@ void squad_update_callback(const UserInfo* updatedUsers, size_t updatedUsersCoun
 		} else // User removed
 		{
 			if (username == selfAccountName) {
-				Log::instance().Logger("MAIN|Extras|Start Remove Self = " + username);
+				Log::instance().Logger("squad_update_callback","MAIN|Extras|Start Remove Self = " + username);
 				auto pred = [](const std::string& player) {
 					if (player == selfAccountName) return false;
 					if (Settings::instance().settings.keepUntrackedPlayer) return false;
@@ -554,7 +554,7 @@ void squad_update_callback(const UserInfo* updatedUsers, size_t updatedUsersCoun
 					player.unTracked = true;
 				}
 			} else {
-				Log::instance().Logger("MAIN|Extras|Start Remove User = " + username);
+				Log::instance().Logger("squad_update_callback", "MAIN|Extras|Start Remove User = " + username);
 				removePlayer(username, AddedBy::Extras);
 			}
 		}
@@ -586,33 +586,33 @@ void addSelfUser(std::string name) {
 		selfAccountName = name;
 	}
 
-	addPlayerAll(name);
+	//addPlayerAll(name);
 
-	const auto& playerIt = cachedPlayers.find(name);
-	if (playerIt == cachedPlayers.end()) {
-		// no element found, create it
-		const auto& tryEmplace = cachedPlayers.try_emplace(name, name, AddedBy::Extras, true);
+	//const auto& playerIt = cachedPlayers.find(name);
+	//if (playerIt == cachedPlayers.end()) {
+	//	// no element found, create it
+	//	const auto& tryEmplace = cachedPlayers.try_emplace(name, name, AddedBy::Extras, true);
 
-		// check if emplacing successful
-		if (tryEmplace.second) {
-			// save player object to work on
-			Player& player = tryEmplace.first->second;
+	//	// check if emplacing successful
+	//	if (tryEmplace.second) {
+	//		// save player object to work on
+	//		Player& player = tryEmplace.first->second;
 
-			// reset size
-			loadNoteSizeChecked(player);
-		}
-	} else {
-		// load user data if not yet loaded (check inside function)
-		loadNoteSizeChecked(playerIt->second);
+	//		// reset size
+	//		loadNoteSizeChecked(player);
+	//	}
+	//} else {
+	//	// load user data if not yet loaded (check inside function)
+	//	loadNoteSizeChecked(playerIt->second);
 
-		// This player was added automatically
-		playerIt->second.addedBy = AddedBy::Extras;
+	//	// This player was added automatically
+	//	playerIt->second.addedBy = AddedBy::Extras;
 
-		// update joined data
-		if (!playerIt->second.self) {
-			playerIt->second.resetJoinedTime();
-		}
-	}
+	//	// update joined data
+	//	if (!playerIt->second.self) {
+	//		playerIt->second.resetJoinedTime();
+	//	}
+	//}
 }
 
 extern "C" __declspec(dllexport) void arcdps_unofficial_extras_subscriber_init(

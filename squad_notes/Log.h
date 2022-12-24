@@ -7,5 +7,5 @@ class Log : public Singleton<Log> {
 public:
 	Log() = default;
 
-	void Logger(std::string logMsg);
+	void Logger(std::string pFunctionName, std::string logMsg);
 };

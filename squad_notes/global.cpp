@@ -56,7 +56,7 @@ void updateNote(std::string username, std::string note) {
  */
 void removePlayer(const std::string& username, AddedBy addedByToDelete) {
 	// remove specific user
-	Log::instance().Logger("Start Remove User = " + username);
+	Log::instance().Logger("removePlayer","Start Remove User = " + username);
 	auto pred = [&username, addedByToDelete](const std::string& player) {
 		if (Settings::instance().settings.keepUntrackedPlayer) return false;
 		if (username == player) {
@@ -65,10 +65,6 @@ void removePlayer(const std::string& username, AddedBy addedByToDelete) {
 			}
 			const auto& cachedPlayerIt = cachedPlayers.find(player);
 			if (cachedPlayerIt != cachedPlayers.end()) {
-				if (true) {
-					cachedPlayerIt->second.unTracked = true;
-					return false;
-				}
 				return cachedPlayerIt->second.addedBy == addedByToDelete;
 			}
 		}
@@ -82,15 +78,14 @@ void removePlayer(const std::string& username, AddedBy addedByToDelete) {
 
 	const auto& instanceSub = std::ranges::remove_if(instancePlayers, pred);
 	instancePlayers.erase(instanceSub.begin(), instanceSub.end());
-
+	const std::string keepUntracked = Settings::instance().settings.keepUntrackedPlayer ? "true" : "false";
+	Log::instance().Logger("removePlayer", "keepUntrackedPlayer = " + keepUntracked);
 	if (Settings::instance().settings.keepUntrackedPlayer) {
-		Log::instance().Logger("Start Update Removed User = " + username);
-		const auto& actualSelfPlayer = cachedPlayers.find(username);
-		if (actualSelfPlayer != cachedPlayers.end()) {
-			if (Settings::instance().settings.keepUntrackedPlayer) {
-				actualSelfPlayer->second.unTracked = true;
-				Log::instance().Logger("Start Removed User updated = " + username);
-			}
+		Log::instance().Logger("removePlayer", "Start Update Removed User = " + username);
+		const auto& actuaPlayer = cachedPlayers.find(username);
+		if (actuaPlayer != cachedPlayers.end()) {
+			actuaPlayer->second.unTracked = true;
+			Log::instance().Logger("removePlayer", "Start Removed User updated = " + username);
 		}
 	}
 }

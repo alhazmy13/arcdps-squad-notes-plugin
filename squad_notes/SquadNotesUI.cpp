@@ -131,7 +131,6 @@ void SquadNotesUI::DrawContent() {
 
 		if (addPlayer) {
 			std::string username(userAddBuf);
-			Log::instance().Logger("Mod init");
 
 			// only run when username is not empty
 			if (!username.empty()) {

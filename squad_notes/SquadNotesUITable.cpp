@@ -39,7 +39,7 @@ bool SquadNotesUITable::drawRow(TableColumnIdx pFirstColumnIndex, const Player& 
 				continue;
 			}
 			if (column.UserId == CHARACTER_NAME_ID) {
-				drawTextColumn<true>(open, pPlayer.unTracked ? "true": "false", pPlayer.username, pPlayer.unTracked, first, pPlayer.commander && !accountNameEnabled);
+				drawTextColumn<true>(open, pPlayer.characterName, pPlayer.username, pPlayer.unTracked, first, pPlayer.commander && !accountNameEnabled);
 				continue;
 			}
 
