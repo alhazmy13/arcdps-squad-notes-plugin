@@ -16,7 +16,7 @@ To allow tracking of players outside your current instance, install the [unoffic
 
 Don't block anyone unless it's mandatory!! type some notes and give him/her a chance!
 
-This plugin will load all the members from everybody in your group, next to his/her name type your notes and then press *ENTER* to save it.
+This plugin will load all the members from your squad, next to his/her name type your notes and then press *ENTER* to save it.
 
 Two way to open the window:  
 - From arcdps options panel.
