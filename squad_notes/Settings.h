@@ -75,6 +75,7 @@ public:
 		SquadNotesUITable::TableSettings tableSettings;
 		bool showBasedOnMap = false;
 		bool keepUntrackedPlayer = true;
+		bool trackRaidSquad = true;
 		std::map<std::string, std::string> notes;
 
 		NLOHMANN_DEFINE_TYPE_INTRUSIVE_NON_THROWING(SettingsObject, version, windowKey,
@@ -82,7 +83,7 @@ public:
 		                                            alignment, headerAlignment, showControls,
 		                                            showHeader, position, keepUntrackedPlayer,
 		                                            cornerPosition, cornerVector, anchorPanelCornerPosition,
-		                                            selfPanelCornerPosition, fromWindowID,
+		                                            selfPanelCornerPosition, fromWindowID, trackRaidSquad,
 		                                            showCommander, hideExtrasMessage, sizingPolicy,
 		                                            headerText, appearAsInOption, showBackground, showScrollbar,
 		                                            windowPadding, maxDisplayed, showAlternatingRowBackground,

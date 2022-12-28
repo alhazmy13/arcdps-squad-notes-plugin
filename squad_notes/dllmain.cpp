@@ -162,18 +162,17 @@ uintptr_t mod_combat(cbtevent* ev, ag* src, ag* dst, const char* skillname, uint
 
 					/* add */
 					if (src->prof) {
-						std::scoped_lock<std::mutex, std::mutex, std::mutex> lock(
-							cachedPlayersMutex, trackedPlayersMutex, instancePlayersMutex);
+						std::scoped_lock<std::mutex, std::mutex> lock(trackedPlayersMutex, instancePlayersMutex);
 
 						// this is self
 						if (selfAccountName.empty() && dst->self) {
 							selfAccountName = username;
 						}
 						if (selfAccountName == username) return 0;
-						auto playerIt = cachedPlayers.find(username);
-						if (playerIt == cachedPlayers.end()) {
+						auto playerIt = trackedPlayers.find(username);
+						if (playerIt == trackedPlayers.end()) {
 							// no element found, create it
-							const auto& tryEmplace = cachedPlayers.try_emplace(
+							const auto& tryEmplace = trackedPlayers.try_emplace(
 								username, username, AddedBy::Arcdps, dst->self, src->name, src->id);
 
 							// check if emplacing successful
@@ -228,7 +227,7 @@ uintptr_t mod_combat(cbtevent* ev, ag* src, ag* dst, const char* skillname, uint
 			if (ev->is_statechange == CBTS_TAG) {
 				// some other person is tag now!
 				uintptr_t id = src->id;
-				for (auto& cachedPlayer : cachedPlayers | std::views::values) {
+				for (auto& cachedPlayer : trackedPlayers | std::views::values) {
 					if (cachedPlayer.id == id) {
 						cachedPlayer.commander = true;
 					} else {
@@ -237,8 +236,8 @@ uintptr_t mod_combat(cbtevent* ev, ag* src, ag* dst, const char* skillname, uint
 				}
 			} else if (ev->is_statechange == CBTS_ENTERCOMBAT) {
 				if (src && src->name) {
-					const auto& player = cachedPlayers.find(src->name);
-					if (player != cachedPlayers.end()) {
+					const auto& player = trackedPlayers.find(src->name);
+					if (player != trackedPlayers.end()) {
 						player->second.subgroup = reinterpret_cast<uint8_t>(dst);
 					}
 				}
@@ -458,8 +457,7 @@ extern "C" __declspec(dllexport) void* get_release_addr() {
 }
 
 void squad_update_callback(const UserInfo* updatedUsers, size_t updatedUsersCount) {
-	std::scoped_lock<std::mutex, std::mutex, std::mutex> guard(trackedPlayersMutex, instancePlayersMutex,
-															   cachedPlayersMutex);
+	std::scoped_lock<std::mutex, std::mutex> guard(trackedPlayersMutex, instancePlayersMutex);
 	for (size_t i = 0; i < updatedUsersCount; i++) {
 		std::string username = updatedUsers[i].AccountName;
 
@@ -478,10 +476,10 @@ void squad_update_callback(const UserInfo* updatedUsers, size_t updatedUsersCoun
 			// addPlayerTracking(username);
 			addPlayerAll(username);
 
-			auto playerIt = cachedPlayers.find(username);
-			if (playerIt == cachedPlayers.end()) {
+			auto playerIt = trackedPlayers.find(username);
+			if (playerIt == trackedPlayers.end()) {
 				// no element found, create it
-				const auto& tryEmplace = cachedPlayers.try_emplace(username, username, AddedBy::Extras,
+				const auto& tryEmplace = trackedPlayers.try_emplace(username, username, AddedBy::Extras,
 																   username == selfAccountName);
 
 				// check if emplacing successful
@@ -530,23 +528,19 @@ void squad_update_callback(const UserInfo* updatedUsers, size_t updatedUsersCoun
 				auto pred = [](const std::string& player) {
 					if (player == selfAccountName) return false;
 					if (Settings::instance().settings.keepUntrackedPlayer) return false;
-					const auto& cachedIt = cachedPlayers.find(player);
-					if (cachedIt != cachedPlayers.end()) {
+					const auto& cachedIt = trackedPlayers.find(player);
+					if (cachedIt != trackedPlayers.end()) {
 						return cachedIt->second.addedBy != AddedBy::Manually;
 					}
 
 					return false;
 				};
-				// Yourself got removed, you have left the squad/group
-				// remove all other players, except yourself
-				const auto& trackedSub = std::ranges::remove_if(trackedPlayers, pred);
-				trackedPlayers.erase(trackedSub.begin(), trackedSub.end());
 
 				const auto& instanceSub = std::ranges::remove_if(instancePlayers, pred);
 				instancePlayers.erase(instanceSub.begin(), instanceSub.end());
 
 		
-				for (auto& cachedPlayer : cachedPlayers) {
+				for (auto& cachedPlayer : trackedPlayers) {
 					Player& player = cachedPlayer.second;
 					if (player.username == selfAccountName) {
 						player.commander = false;

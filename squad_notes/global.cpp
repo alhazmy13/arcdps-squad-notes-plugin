@@ -14,10 +14,10 @@
 #include "Log.h"
 #include <imgui/imgui.h>
 
-std::vector<std::string> trackedPlayers;
+std::map<std::string, Player> trackedPlayers;
 std::mutex trackedPlayersMutex;
-std::map<std::string, Player> cachedPlayers;
-std::mutex cachedPlayersMutex;
+//std::map<std::string, Player> cachedPlayers;
+//std::mutex cachedPlayersMutex;
 std::vector<std::string> instancePlayers;
 std::mutex instancePlayersMutex;
 std::string selfAccountName;
@@ -29,11 +29,23 @@ bool extrasLoaded;
  * Do not load, when more than 10 players are in your squad, we are not interested in open world stuff
  */
 void loadNoteSizeChecked(Player& player) {
-	if (trackedPlayers.size() <= 10) {
-		loadPlayerNote(player);
+	if (Settings::instance().settings.trackRaidSquad) {
+		if (getTrackListSize() <  10) {
+			loadPlayerNote(player);
+		}
+		return;
 	}
+	loadPlayerNote(player);
 }
 
+int getTrackListSize() {
+	int size = 0;
+	for (auto& cachedPlayer : trackedPlayers) {
+		Player& player = cachedPlayer.second;
+		if (!player.unTracked) size++;
+	}
+	return size;
+}
 
 void loadPlayerNote(Player& player) {
 	if (Settings::instance().settings.showSquadNotes) {
@@ -42,7 +54,7 @@ void loadPlayerNote(Player& player) {
 }
 
 void updateNote(std::string username, std::string note) {
-	for (auto& cachedPlayer : cachedPlayers) {
+	for (auto& cachedPlayer : trackedPlayers) {
 		Player& player = cachedPlayer.second;
 		if (player.username == username) {
 			player.note = note;
@@ -63,8 +75,8 @@ void removePlayer(const std::string& username, AddedBy addedByToDelete) {
 			if (addedByToDelete == AddedBy::Miscellaneous) {
 				return true;
 			}
-			const auto& cachedPlayerIt = cachedPlayers.find(player);
-			if (cachedPlayerIt != cachedPlayers.end()) {
+			const auto& cachedPlayerIt = trackedPlayers.find(player);
+			if (cachedPlayerIt != trackedPlayers.end()) {
 				return cachedPlayerIt->second.addedBy == addedByToDelete;
 			}
 		}
@@ -73,17 +85,18 @@ void removePlayer(const std::string& username, AddedBy addedByToDelete) {
 	};
 
 	// actually remove from tracking
-	const auto& trackedSub = std::ranges::remove_if(trackedPlayers, pred);
-	trackedPlayers.erase(trackedSub.begin(), trackedSub.end());
+	//const auto& trackedSub = std::ranges::remove_if(trackedPlayers, pred);
+	//trackedPlayers.erase(trackedSub.begin(), trackedSub.end());
 
 	const auto& instanceSub = std::ranges::remove_if(instancePlayers, pred);
 	instancePlayers.erase(instanceSub.begin(), instanceSub.end());
+
 	const std::string keepUntracked = Settings::instance().settings.keepUntrackedPlayer ? "true" : "false";
 	Log::instance().Logger("removePlayer", "keepUntrackedPlayer = " + keepUntracked);
 	if (Settings::instance().settings.keepUntrackedPlayer) {
 		Log::instance().Logger("removePlayer", "Start Update Removed User = " + username);
-		const auto& actuaPlayer = cachedPlayers.find(username);
-		if (actuaPlayer != cachedPlayers.end()) {
+		const auto& actuaPlayer = trackedPlayers.find(username);
+		if (actuaPlayer != trackedPlayers.end()) {
 			actuaPlayer->second.unTracked = true;
 			Log::instance().Logger("removePlayer", "Start Removed User updated = " + username);
 		}
@@ -94,8 +107,13 @@ void removePlayer(const std::string& username, AddedBy addedByToDelete) {
  * lock `trackedPlayersMutex` and `instancePlayersMutex` before calling this
  */
 bool addPlayerAll(const std::string& username) {
-	addPlayerInstance(username);
-	return addPlayerTracking(username);
+	if (Settings::instance().settings.trackRaidSquad) {
+		if (getTrackListSize() < 10) {
+			return addPlayerInstance(username);
+		}
+		return false;
+	}
+	return addPlayerInstance(username);
 }
 
 /**
@@ -112,26 +130,13 @@ bool addPlayerInstance(const std::string& username) {
 	return false;
 }
 
-/**
- * add to tracking
- * only add to tracking, if not already there
- * 
- * lock `trackedPlayersMutex` before calling this
- */
-bool addPlayerTracking(const std::string& username) {
-	if (std::ranges::find(trackedPlayers, username) == trackedPlayers.end()) {
-		trackedPlayers.emplace_back(username);
-		return true;
-	}
-	return false;
-}
 
 /**
  *
  * lock `cachedPlayersMutex` before calling this!
  */
 void updateCommander(const std::string& commanderName) {
-	for (auto& cachedPlayer : cachedPlayers) {
+	for (auto& cachedPlayer : trackedPlayers) {
 		Player& player = cachedPlayer.second;
 		if (player.username == commanderName) {
 			player.commander = true;

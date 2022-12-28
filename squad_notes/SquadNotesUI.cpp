@@ -90,7 +90,7 @@ void SquadNotesUI::DrawStyleSettingsSubMenu() {
 
 void SquadNotesUI::DrawContent() {
 	// lock the mutexes, before we access sensible data
-	std::scoped_lock<std::mutex, std::mutex> lock(trackedPlayersMutex, cachedPlayersMutex);
+	std::scoped_lock<std::mutex, std::mutex> lock(trackedPlayersMutex, instancePlayersMutex);
 
 	auto& settings = Settings::instance();
 
@@ -123,7 +123,7 @@ void SquadNotesUI::DrawContent() {
 			addPlayer = true;
 		}
 		if (ImGui::IsItemHovered())
-			ImGui::SetTooltip("Accountname, or Charactername to search and add to the list"s.c_str());
+			ImGui::SetTooltip("Accountname, or Charactername to add to the list"s.c_str());
 		ImGui::SameLine();
 		if (ImGui::Button("Add"s.c_str())) {
 			addPlayer = true;
@@ -134,15 +134,15 @@ void SquadNotesUI::DrawContent() {
 
 			// only run when username is not empty
 			if (!username.empty()) {
-				const auto& existingPlayer = std::ranges::find_if(cachedPlayers, [&username](const auto& elem) -> bool {
+				const auto& existingPlayer = std::ranges::find_if(trackedPlayers, [&username](const auto& elem) -> bool {
 					return elem.first == username || elem.second.characterName == username;
 				});
 
-				if (existingPlayer == cachedPlayers.end()) {
+				if (existingPlayer == trackedPlayers.end()) {
 					// add new player
-					trackedPlayers.emplace_back(username);
+					instancePlayers.emplace_back(username);
 
-					const auto& tryEmplace = cachedPlayers.try_emplace(username, username, AddedBy::Manually);
+					const auto& tryEmplace = trackedPlayers.try_emplace(username, username, AddedBy::Manually);
 					// This should always be `true`
 					if (tryEmplace.second) {
 						loadPlayerNote(tryEmplace.first->second);
@@ -153,9 +153,9 @@ void SquadNotesUI::DrawContent() {
 					username = existingPlayer->first;
 					
 					// check of player is already tracked
-					if (std::ranges::find(trackedPlayers, username) == trackedPlayers.end()) {
-						// not yet tracked, add to tracking and update
-						trackedPlayers.emplace_back(username);
+					if (std::ranges::find(instancePlayers, username) == instancePlayers.end()) {
+						// not yet tracked, add to instace and update
+						instancePlayers.emplace_back(username);
 
 						// set to Manually added
 						existingPlayer->second.addedBy = AddedBy::Manually;
@@ -173,20 +173,20 @@ void SquadNotesUI::DrawContent() {
 		ImGui::SameLine();
 		if (ImGui::Button("Clear"s.c_str())) {
 			auto pred = [](const std::string& player) {
-				const auto& cachedIt = cachedPlayers.find(player);
-				if (cachedIt != cachedPlayers.end()) {
-					return cachedIt->second.unTracked;
+				const auto& trackIt = trackedPlayers.find(player);
+				if (trackIt != trackedPlayers.end()) {
+					if (trackIt->second.unTracked) {
+						trackedPlayers.erase(trackIt->second.username);
+						return true;
+					}
+					return false;
 				}
 
 				return false;
 			};
 
-			const auto& trackedSub = std::ranges::remove_if(trackedPlayers, pred);
-			trackedPlayers.erase(trackedSub.begin(), trackedSub.end());
-
 			const auto& instanceSub = std::ranges::remove_if(instancePlayers, pred);
 			instancePlayers.erase(instanceSub.begin(), instanceSub.end());
-			trackedPlayers = instancePlayers;
 		}
 		if (ImGui::IsItemHovered()) {
 			ImGui::SetTooltip("Remove all manually/unTracked users"s.c_str());

@@ -28,32 +28,12 @@ void SettingsUI::Draw() {
 	}
 	ImGui::Checkbox("Keep unTracked/Leave players on Squad note Panel"s.c_str(), &settings.settings.keepUntrackedPlayer);
 
+	ImGui::Checkbox("Only Track Raid Squads"s.c_str(), &settings.settings.trackRaidSquad);
+
 	ImGui::Checkbox("Do NOT close window on ESC"s.c_str(), &settings.settings.disableEscClose);
 
 	ImGui::Checkbox("Hide Unofficial Extras Message"s.c_str(), &settings.settings.hideExtrasMessage);
 
-	if (ImGui::Button("Clear Cache"s.c_str())) {
-		std::scoped_lock<std::mutex, std::mutex> guard(cachedPlayersMutex, trackedPlayersMutex);
-
-		// get all accountnames and charnames
-		std::list<Player> usersToKeep;
-		for (std::string trackedPlayer : trackedPlayers) {
-			const Player& player = cachedPlayers.at(trackedPlayer);
-			usersToKeep.emplace_back(player.username, player.addedBy, player.self, player.characterName, player.id);
-		}
-
-		// clear the cache
-		cachedPlayers.clear();
-		settings.settings.notes.clear();
-		// refill the cache with only tracked players
-		for (const Player& player : usersToKeep) {
-			const auto& tryEmplace = cachedPlayers.try_emplace(player.username, player.username, player.addedBy,
-			                                                   player.self, player.characterName, player.id);
-
-			// load player note
-			loadNoteSizeChecked(tryEmplace.first->second);
-		}
-	}
 	if (ImGui::IsItemHovered())
 		ImGui::SetTooltip("Clear the cache and reload notes data for all players"s.c_str());
 
