@@ -95,8 +95,8 @@ void SquadNotesUITable::DrawRows(TableColumnIdx pFirstColumnIndex) {
 	const auto& settingsObject = Settings::instance().settings;
 
 	// List of all players
-	for (const std::string& trackedPlayer : trackedPlayers) {
-		const Player& player = cachedPlayers.at(trackedPlayer);
+	for (const std::string& trackedPlayer : instancePlayers) {
+		const Player& player = trackedPlayers.at(trackedPlayer);
 
 		bool open = drawRow(pFirstColumnIndex, player, true);
 		if (open) {
@@ -114,9 +114,9 @@ void SquadNotesUITable::Sort(const ImGuiTableColumnSortSpecs* mColumnSortSpecs) 
 	const bool descend = mColumnSortSpecs->SortDirection == ImGuiSortDirection_Descending;
 
 	if (mColumnSortSpecs->ColumnUserID == JOIN_TIME_ID) {
-		std::ranges::sort(trackedPlayers, [descend](const std::string& playerAName, const std::string& playerBName) -> bool {
-			const SYSTEMTIME& joinedTimeA = cachedPlayers.at(playerAName).joinedTime;
-		const SYSTEMTIME& joinedTimeB = cachedPlayers.at(playerBName).joinedTime;
+		std::ranges::sort(instancePlayers, [descend](const std::string& playerAName, const std::string& playerBName) -> bool {
+			const SYSTEMTIME& joinedTimeA = trackedPlayers.at(playerAName).joinedTime;
+		const SYSTEMTIME& joinedTimeB = trackedPlayers.at(playerBName).joinedTime;
 
 		auto tiedTimeA = std::tie(joinedTimeA.wYear, joinedTimeA.wMonth, joinedTimeA.wDay, joinedTimeA.wHour, joinedTimeA.wMinute, joinedTimeA.wSecond);
 		auto tiedTimeB = std::tie(joinedTimeB.wYear, joinedTimeB.wMonth, joinedTimeB.wDay, joinedTimeB.wHour, joinedTimeB.wMinute, joinedTimeB.wSecond);
@@ -130,7 +130,7 @@ void SquadNotesUITable::Sort(const ImGuiTableColumnSortSpecs* mColumnSortSpecs) 
 	}
 	if (mColumnSortSpecs->ColumnUserID == ACCOUNT_NAME_ID) {
 		// sort by account name. Account name is the value we used in trackedPlayers, so nothing more to do
-		std::ranges::sort(trackedPlayers, [descend](std::string playerAName, std::string playerBName) {
+		std::ranges::sort(instancePlayers, [descend](std::string playerAName, std::string playerBName) {
 			std::ranges::transform(playerAName, playerAName.begin(), [](unsigned char c) { return std::tolower(c); });
 		std::ranges::transform(playerBName, playerBName.begin(), [](unsigned char c) { return std::tolower(c); });
 
@@ -143,9 +143,9 @@ void SquadNotesUITable::Sort(const ImGuiTableColumnSortSpecs* mColumnSortSpecs) 
 	}
 	if (mColumnSortSpecs->ColumnUserID == CHARACTER_NAME_ID) {
 		// sort by character name
-		std::ranges::sort(trackedPlayers, [descend](const std::string& playerAName, const std::string& playerBName) {
-			std::string playerAChar = cachedPlayers.at(playerAName).characterName;
-		std::string playerBChar = cachedPlayers.at(playerBName).characterName;
+		std::ranges::sort(instancePlayers, [descend](const std::string& playerAName, const std::string& playerBName) {
+			std::string playerAChar = trackedPlayers.at(playerAName).characterName;
+		std::string playerBChar = trackedPlayers.at(playerBName).characterName;
 
 		std::ranges::transform(playerAChar, playerAChar.begin(), [](unsigned char c) { return std::tolower(c); });
 		std::ranges::transform(playerBChar, playerBChar.begin(), [](unsigned char c) { return std::tolower(c); });
@@ -160,9 +160,9 @@ void SquadNotesUITable::Sort(const ImGuiTableColumnSortSpecs* mColumnSortSpecs) 
 
 	if (mColumnSortSpecs->ColumnUserID == SUBGROUP_ID) {
 		// sort by subgroup
-		std::ranges::sort(trackedPlayers, [descend](const std::string& playerAName, const std::string& playerBName) {
-			uint8_t playerAGroup = cachedPlayers.at(playerAName).subgroup;
-		uint8_t playerBGroup = cachedPlayers.at(playerBName).subgroup;
+		std::ranges::sort(instancePlayers, [descend](const std::string& playerAName, const std::string& playerBName) {
+			uint8_t playerAGroup = trackedPlayers.at(playerAName).subgroup;
+		uint8_t playerBGroup = trackedPlayers.at(playerBName).subgroup;
 
 		if (descend) {
 			return playerAGroup > playerBGroup;

@@ -15,10 +15,10 @@ enum class AddedBy;
 class Player;
 class SquadNotesUI;
 
-extern std::vector<std::string> trackedPlayers;
+extern std::map<std::string, Player> trackedPlayers;
 extern std::mutex trackedPlayersMutex;
-extern std::map<std::string, Player> cachedPlayers;
-extern std::mutex cachedPlayersMutex;
+//extern std::map<std::string, Player> cachedPlayers;
+//extern std::mutex cachedPlayersMutex;
 extern std::vector<std::string> instancePlayers;
 extern std::mutex instancePlayersMutex;
 extern HMODULE self_dll;
@@ -30,9 +30,7 @@ void loadPlayerNote(Player& player);
 void updateNote(std::string username, std::string note);
 
 void removePlayer(const std::string& username, AddedBy addedByToDelete);
-// void removePlayerInstance(const std::string& username);
-// void removePlayerTracking(const std::string& username);
-bool addPlayerTracking(const std::string& username);
+int getTrackListSize();
 bool addPlayerAll(const std::string& username);
 bool addPlayerInstance(const std::string& username);
 void updateCommander(const std::string& commanderName);
